@@ -1,0 +1,28 @@
+{
+  "name": "Java Microservices Dev Environment",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode",
+        "ms-vscode.js-debug-nightly",
+        "ms-vscode.vscode-js-profile-flame",
+        "dbaeumer.vscode-eslint",
+        "msjsdiag.debugger-for-chrome"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "java.server.launchMode": "Standard",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "forwardPorts": [8081, 8082, 3000, 5005, 5006, 9222],
+  "remoteUser": "vscode"
+}

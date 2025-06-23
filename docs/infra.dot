@@ -1,0 +1,19 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "Redis" [ label = "Redis
+(AWS::ElastiCache::CacheCluster)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "PostgreSQL" [ label = "PostgreSQL
+(AWS::RDS::DBInstance)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "AuthService" [ label = "AuthService
+(AWS::ECS::Service)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "ShoppingService" [ label = "ShoppingService
+(AWS::ECS::Service)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "Frontend" [ label = "Frontend
+(AWS::S3::Bucket)", shape =cylinder, fillcolor = "#FFF5CD" ];
+  "AuthService" -> "Redis";
+  "AuthService" -> "PostgreSQL";
+  "ShoppingService" -> "AuthService";
+  "ShoppingService" -> "PostgreSQL";
+  "Frontend" -> "AuthService";
+  "Frontend" -> "ShoppingService";
+}

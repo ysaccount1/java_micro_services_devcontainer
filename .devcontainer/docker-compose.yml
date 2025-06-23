@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  workspace:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh
+    networks:
+      - app-network
+
+  auth-service:
+    build: 
+      context: ../auth-service
+      dockerfile: ../auth-service/Dockerfile.dev
+    ports:
+      - "8082:8082"
+      - "5006:5005"  # Debug port
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/authdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    volumes:
+      - ../auth-service:/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+
+  shopping-service:
+    build: 
+      context: ../shopping-service
+      dockerfile: ../shopping-service/Dockerfile.dev
+    ports:
+      - "8081:8081"
+      - "5007:5005"  # Debug port
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/shoppingdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    volumes:
+      - ../shopping-service:/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - auth-service
+      - postgres
+    networks:
+      - app-network
+
+  frontend:
+    build: 
+      context: ../frontend
+      dockerfile: ../frontend/Dockerfile.dev
+    ports:
+      - "3000:3000"
+      - "9222:9222"  # Chrome debugging port
+    volumes:
+      - ../frontend:/app:cached
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - WDS_SOCKET_PORT=0
+      - REACT_APP_AUTH_API_URL=http://localhost:8082
+      - REACT_APP_SHOPPING_API_URL=http://localhost:8081
+      - BROWSER=none
+    env_file:
+      - ../frontend/.env.development
+    stdin_open: true
+    tty: true
+    depends_on:
+      - auth-service
+      - shopping-service
+    networks:
+      - app-network
+
+volumes:
+  maven-repo:
+    name: maven-repo
+  postgres-data:
+    name: postgres-data
+
+networks:
+  app-network:
+    driver: bridge

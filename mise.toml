@@ -1,0 +1,81 @@
+[tools]
+# Java configuration for the project
+java = "17"
+
+# Node.js version for frontend development
+nodejs = "18"
+
+# Optional tools that might be useful for this project
+maven = "3.9"
+postgres = "15"
+
+[env]
+# Environment variables for development
+JAVA_HOME = "~/.local/share/mise/installs/java/17/Contents/Home"
+MAVEN_HOME = "~/.local/share/mise/installs/maven/3.9"
+
+# Project-specific environment variables
+APP_ENV = "development"
+AUTH_SERVICE_PORT = "8080"
+SHOPPING_SERVICE_PORT = "8081"
+# Use a single variable for Docker host IP with a default value
+DOCKER_HOST_IP = "host.docker.internal"
+
+[tasks]
+# Define common development tasks
+start-auth = "cd auth-service && ./mvnw spring-boot:run"
+start-shopping = "cd shopping-service && ./mvnw spring-boot:run"
+start-frontend = "cd frontend && npm start"
+start-all = ["start-auth", "start-shopping", "start-frontend"]
+
+build-all = ["cd auth-service && ./mvnw clean package", "cd shopping-service && ./mvnw clean package", "cd frontend && npm run build"]
+
+# Database tasks
+db-reset = "docker compose -f .devcontainer/docker-compose.yml restart postgres"
+db-migrate = "sh -c 'cd ${1:-auth-service} && ./mvnw flyway:migrate'"
+db-seed = "sh -c 'psql -h localhost -U postgres -d microservices -f ./scripts/seed-data.sql'"
+
+# Docker commands for devcontainer
+docker-up = "sh -c 'docker compose -f .devcontainer/docker-compose.yml up -d ${@}'"
+docker-down = "sh -c 'docker compose -f .devcontainer/docker-compose.yml down ${@}'"
+docker-logs = "sh -c 'docker compose -f .devcontainer/docker-compose.yml logs -f ${@}'"
+docker-ps = "docker compose -f .devcontainer/docker-compose.yml ps"
+docker-rebuild = "sh -c 'docker compose -f .devcontainer/docker-compose.yml build --no-cache ${@} && docker compose -f .devcontainer/docker-compose.yml up -d ${@}'"
+docker-restart = "sh -c 'docker compose -f .devcontainer/docker-compose.yml down ${@} && docker compose -f .devcontainer/docker-compose.yml build ${@} && docker compose -f .devcontainer/docker-compose.yml up -d ${@}'"
+docker-clean = "docker compose -f .devcontainer/docker-compose.yml down -v --remove-orphans"
+docker-dev = "docker compose -f .devcontainer/docker-compose.yml up -d"
+
+# Testing tasks
+test-auth = "cd auth-service && ./mvnw test"
+test-shopping = "cd shopping-service && ./mvnw test"
+test-all = ["test-auth", "test-shopping"]
+test-coverage = "sh -c 'cd ${1:-auth-service} && ./mvnw test jacoco:report'"
+
+# Utility tasks
+lint = "sh -c 'cd ${1:-auth-service} && ./mvnw checkstyle:check'"
+format = "sh -c 'cd ${1:-auth-service} && ./mvnw spotless:apply'"
+deps-update = "sh -c 'cd ${1:-auth-service} && ./mvnw versions:update-properties'"
+deps-check = "sh -c 'cd ${1:-auth-service} && ./mvnw versions:display-dependency-updates'"
+
+# Deployment tasks
+deploy-dev = "sh -c './scripts/deploy.sh dev'"
+deploy-staging = "sh -c './scripts/deploy.sh staging'"
+deploy-prod = "sh -c './scripts/deploy.sh prod'"
+deploy-local = "sh -c './scripts/deploy.sh dev'"  # Added local deployment alias
+
+# Documentation tasks
+docs-generate = "sh -c 'cd ${1:-auth-service} && ./mvnw javadoc:javadoc'"
+api-docs = "sh -c 'cd ${1:-auth-service} && ./mvnw springdoc:generate'"
+
+# Project setup
+setup = [
+  "docker-up",
+  "sh -c 'sleep 5'",  # Wait for services to be ready
+  "db-migrate auth-service",
+  "db-migrate shopping-service"
+]
+
+# Aliases for common workflows
+alias.dev = "docker-dev"
+alias.test = "test-all"
+alias.build = "build-all"

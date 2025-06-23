@@ -1,0 +1,18 @@
+FROM maven:3.8.4-openjdk-17
+WORKDIR /app
+COPY pom.xml .
+
+
+
+# Skip using cached dependencies and force fresh download
+#RUN mkdir -p /root/.m2
+#RUN rm -rf /root/.m2/repository
+#RUN mvn -U clean dependency:go-offline -Dmaven.repo.local=/root/.m2/repository
+
+# Download dependencies and cache them
+RUN mvn dependency:go-offline
+
+ENV SPRING_DEVTOOLS_RESTART_ENABLED=true
+ENV SPRING_DEVTOOLS_ADD_PROPERTIES=true
+
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'", "-Dspring-boot.run.addResources=true"] 

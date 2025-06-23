@@ -1,0 +1,75 @@
+version: '3.8'
+
+volumes:
+  maven-repo:
+    name: maven-repo
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  auth-service:
+    build: 
+      context: ./auth-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8082:8082"
+      - "5005:5005"  # Debug port
+    environment:
+      - SPRING_REDIS_HOST=redis
+    volumes:
+      - ./auth-service:/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  shopping-service:
+    build: 
+      context: ./shopping-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8081:8081"
+      - "5006:5005"  # Debug port
+    volumes:
+      - ./shopping-service:/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - auth-service
+    networks:
+      - app-network
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app:cached
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - WDS_SOCKET_PORT=0
+      - REACT_APP_AUTH_API_URL=http://localhost:8082
+      - REACT_APP_SHOPPING_API_URL=http://localhost:8081
+    env_file:
+      - ./frontend/.env.development
+    stdin_open: true
+    tty: true
+    depends_on:
+      - auth-service
+      - shopping-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

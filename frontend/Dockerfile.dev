@@ -1,0 +1,17 @@
+FROM node:16-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+RUN npm install @mui/icons-material@^5.13.0 --legacy-peer-deps
+RUN npm install @emotion/styled@^11.11.0 --legacy-peer-deps
+EXPOSE 3000
+COPY . .
+
+# Add these environment variables for better hot reloading
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+ENV FAST_REFRESH=true
+ENV BROWSER=none
+
+# Simple start command - no Chrome in container
+CMD ["npm", "start"]
