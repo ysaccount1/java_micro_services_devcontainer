@@ -4,6 +4,8 @@ A modern e-commerce platform built with Spring Boot microservices and React, fea
 
 This project demonstrates a production-ready microservices architecture that separates authentication and shopping concerns into distinct services. The platform provides secure user authentication with JWT tokens, efficient product caching using Redis, and a responsive React frontend for seamless user experience. The services are containerized using Docker for consistent development and deployment environments.
 
+Web UI (using debug port# 3000)
+![alt text](image.png)
 ## Repository Structure
 ```
 .
